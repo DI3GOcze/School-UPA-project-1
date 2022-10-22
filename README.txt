@@ -1,0 +1,1 @@
+Udelejte si kopii souboru config_example.py do soubory config.py pro lokalni configy.
