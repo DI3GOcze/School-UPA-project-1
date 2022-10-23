@@ -18,8 +18,12 @@ class StationModel:
     def __init__(self, db : database.Database):
         self.db = db
         
-    def insert(self, name, id, countryCode):
-        collection = self.db['station']
-        collection.insert_one({
-            '_id': id
+    def insert(self, name: str, id: int, countryCode: int, linkIds: list[int]):
+        # Create array of objects 
+        sationCollection = self.db['station']
+        sationCollection.insert_one({
+            '_id': id,
+            'name': name,
+            'countryCode' : countryCode,
+            'linkIds': linkIds
         })
