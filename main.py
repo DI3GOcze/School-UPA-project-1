@@ -21,4 +21,4 @@ if __name__ == "__main__":
 
     database = Database()
 
-    database.locationModel.insert('Siroky Dul', 123452, 'CZ')
+    database.stationModel.insert('Siroky Dul', 123452, 'CZ')

@@ -21,5 +21,5 @@ class StationModel:
     def insert(self, name, id, countryCode):
         collection = self.db['station']
         collection.insert_one({
-            
+            '_id': id
         })
