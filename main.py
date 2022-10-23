@@ -5,7 +5,6 @@ from models import *
 class Database():
     def __init__(self) -> None:
         self.get_database()
-        self.locationModel = location.LocationModel(self.db)
         self.linkModel = link.LinkModel(self.db)
         self.stationModel = station.StationModel(self.db)
 
