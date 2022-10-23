@@ -41,18 +41,16 @@ def insertDummyLinks(database: Database):
             ])
         ]
 
-    # %f nejde pouzit, protoze je to .0000000 prilis dlouhy, takze proste jen skip
-    timeFormat = '%H:%M:%S.0000000%z'
+    database.linkModel.insert(1, stations, [nowdate, nowdate + timedelta(days=3)])
 
-    database.linkModel.insert(4, stations, datetime.strptime('18:03:00.0000000+01:00', timeFormat))
  
 # Temp function for dummy data
 def insertDummyStations(database: Database):
-    database.stationModel.insert('Siroky Dul', 7 , 'CZ', [1])
-    database.stationModel.insert('Policka', 8 , 'CZ', [1])
-    database.stationModel.insert('Bystre', 9 , 'CZ', [1])
-    database.stationModel.insert('Brno', 10 , 'CZ', [1])
-    database.stationModel.insert('Praha', 11 , 'CZ', [1])
+    database.stationModel.insert('Siroky Dul', 1 , 'CZ', [1])
+    database.stationModel.insert('Policka', 2 , 'CZ', [1])
+    database.stationModel.insert('Bystre', 3 , 'CZ', [1])
+    database.stationModel.insert('Brno', 4 , 'CZ', [1])
+    database.stationModel.insert('Praha', 5 , 'CZ', [1])
 
 
 # This is added so that many files can reuse the function get_database()
@@ -60,5 +58,7 @@ if __name__ == "__main__":
 
     database = Database()
 
-    insertDummyStations(database)
-    insertDummyLinks(database)
+    # insertDummyStations(database)
+    # insertDummyLinks(database)
+
+    # database.linkModel.findLinks('Siroky Dul', 'Policka', datetime.now())
