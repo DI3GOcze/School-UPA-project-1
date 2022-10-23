@@ -1,3 +1,4 @@
+from datetime import datetime
 from pymongo import database
 from dataclasses import dataclass
 
@@ -41,8 +42,8 @@ class trainActivityStructure:
 # Data structure for relation between link and station 
 class linkStationStructure:
     id: any
-    arrivalTime: int
-    departureTime: int
+    arrivalTime: datetime
+    departureTime: datetime
     trainActivites: list[trainActivityStructure]
 
 
@@ -51,7 +52,7 @@ class LinkModel:
     def __init__(self, db : database.Database):
         self.db = db
         
-    def insert(self, id, stations: list[linkStationStructure], calendar: list[int]):
+    def insert(self, id, stations: list[linkStationStructure], calendar: list[datetime]):
         # Create array from linkStationStructure objects
         linkIdsArray = [{
             '_id': x.id,
@@ -70,5 +71,11 @@ class LinkModel:
             'plannedCalendar': calendar 
         })
 
-    def findLinks(self, fromName: str, toName: str, date):
-        linksCollection = self.db['link']
+    def findLinks(self, fromName: str, toName: str, date: datetime):
+        linkCollection = self.db['link']
+        stationCollection = self.db['station']
+
+        stationFrom = stationCollection.find_one({'name': fromName})
+        stationTo = stationCollection.find_one({'name': toName})
+
+

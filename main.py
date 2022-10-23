@@ -1,7 +1,9 @@
-from pymongo import MongoClient
 import config # Tenhle soubor si vytvorte z config_example.py
 from models import *
 from models.link import linkStationStructure, trainActivityStructure
+from datetime import timedelta, datetime
+from pymongo import MongoClient
+
 
 class Database():
     def __init__(self) -> None:
@@ -18,26 +20,32 @@ class Database():
 
 # Temp function for dummy data
 def insertDummyLinks(database: Database):
+    
+    nowdate = datetime.now()
+
     stations = [
-            linkStationStructure(1, 5, 5, [
+            linkStationStructure(1, nowdate + timedelta(hours=1), nowdate, [
                 trainActivityStructure('001', 1)
             ]),
-            linkStationStructure(2, 6, 6, [
+            linkStationStructure(2, nowdate + timedelta(hours=2), nowdate, [
                 trainActivityStructure('001', 1)
             ]),
-            linkStationStructure(3, 7, 7, [
+            linkStationStructure(3, nowdate + timedelta(hours=3), nowdate, [
                 trainActivityStructure('001', 1)
             ]),
-            linkStationStructure(4, 9, 9, [
+            linkStationStructure(4, nowdate + timedelta(hours=4), nowdate, [
                 trainActivityStructure('001', 1)
             ]),
-            linkStationStructure(5, 10, 10, [
+            linkStationStructure(5, nowdate + timedelta(hours=5), nowdate, [
                 trainActivityStructure('001', 1)
             ])
         ]
 
-    database.linkModel.insert(4, stations)
+    # %f nejde pouzit, protoze je to .0000000 prilis dlouhy, takze proste jen skip
+    timeFormat = '%H:%M:%S.0000000%z'
 
+    database.linkModel.insert(4, stations, datetime.strptime('18:03:00.0000000+01:00', timeFormat))
+ 
 # Temp function for dummy data
 def insertDummyStations(database: Database):
     database.stationModel.insert('Siroky Dul', 7 , 'CZ', [1])
