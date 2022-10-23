@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 from pymongo import database
 from dataclasses import dataclass
 
@@ -37,15 +37,16 @@ from dataclasses import dataclass
 @dataclass
 class trainActivityStructure:
     type: Any
-    asocTrainID: int
+    asocTrainID: Optional[str]
+    asocOTN: Optional[str]
 
 @dataclass
 # Data structure for relation between link and station 
 class linkStationStructure:
     id: Any
-    arrivalTime: datetime
-    departureTime: datetime
-    trainActivites: list[trainActivityStructure]
+    arrivalTime: Optional[datetime]
+    departureTime: Optional[datetime]
+    trainActivities: list[trainActivityStructure]
 
 
 class LinkModel:
@@ -61,8 +62,9 @@ class LinkModel:
             'departureTime': x.departureTime,
             'trainActivites': [{
                 'type': y.type,
-                'asocTrainID': y.asocTrainID
-                }  for y in x.trainActivites]
+                'asocTrainID': y.asocTrainID,
+                'asocOTN': y.asocOTN
+                }  for y in x.trainActivities]
             } for x in stations]
         
         linkCollection = self.db['link']
