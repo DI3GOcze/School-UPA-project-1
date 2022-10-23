@@ -1,27 +1,22 @@
 from pymongo import MongoClient
 import config # Tenhle soubor si vytvorte z config_example.py
+from models import *
 
-def get_database():
- 
-    # Provide the mongodb atlas url to connect python to mongodb using pymongo
+class Database():
+    def __init__(self) -> None:
+        self.get_database()
+        self.locationModel = location.LocationModel(self.db)
 
-    # Create a connection using MongoClient. You can import MongoClient or use pymongo.MongoClient
-    client = MongoClient(config.CONNECTION_STRING)
+    def get_database(self):
+        # Get connecion
+        client = MongoClient(config.CONNECTION_STRING)
+        # Get db
+        self.db = client[config.DB_NAME]
 
-    # Create the database for our example (we will use the same database throughout the tutorial
-    return client[config.DB_NAME]
-  
+
 # This is added so that many files can reuse the function get_database()
 if __name__ == "__main__":   
-  
-    # Get the database
-    dbname = get_database()
 
-    collection_name = dbname["test"]
+    database = Database()
 
-    item_1 = {
-    "_id" : "1",
-    "name" : "test1"
-    }
-
-    collection_name.insert_one(item_1)
+    database.locationModel.insert('Siroky Dul', 123452, 'CZ')
