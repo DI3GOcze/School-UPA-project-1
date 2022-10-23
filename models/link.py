@@ -20,7 +20,7 @@ from pymongo import database
 
 class StationModel:
     
-    def __init__(self, db : database.Database) -> None:
+    def __init__(self, db : database.Database):
         self.db = db
         
     def insert(self, name, id, countryCode):
