@@ -51,7 +51,7 @@ class LinkModel:
     def __init__(self, db : database.Database):
         self.db = db
         
-    def insert(self, id, stations: list[linkStationStructure]):
+    def insert(self, id, stations: list[linkStationStructure], callendar: list[int]):
         # Create array from linkStationStructure objects
         linkIdsArray = [{
             '_id': x.id,
@@ -66,7 +66,8 @@ class LinkModel:
         linkCollection = self.db['link']
         linkCollection.insert_one({
             '_id': id,
-            'linkIds': linkIdsArray
+            'linkIds': linkIdsArray,
+            'plannedCalendar': callendar 
         })
 
     def findLinks(self, fromName: str, toName: str, date):
