@@ -121,12 +121,48 @@ class LinkModel:
             },
             {
                 '$match': { 
-                #    '$expr': {
-                #         '$lt': ["$startingStation.departureTime", '$destinationStation.arrivalTime']
-                #     },
+                   '$expr': {
+                        '$lt': ["$startingStation.departureTime", '$destinationStation.arrivalTime']
+                    },
                     'plannedCalendar': { '$elemMatch': {'$lt': upperDateLimit, '$gte': lowerDateLimit} } 
                 }
-            }
+            },
+            {
+                '$lookup': {
+                    'from': "station",
+                    'localField': "stations._id",
+                    'foreignField': "_id",
+                    'as': "stationsInfo"
+                }
+            },
+            { 
+                "$addFields": {
+                    "stations": {
+                        "$map": {
+                            "input": "$stations",
+                            "in": {
+                                "$mergeObjects": [
+                                    "$$this",
+                                    { 
+                                        "$arrayElemAt": [
+                                            "$stationsInfo",
+                                            { 
+                                                "$indexOfArray": [
+                                                    "$stationsInfo._id",
+                                                    "$$this._id"
+                                                ] 
+                                            }
+                                        ] 
+                                    }
+                                ] 
+                            }
+                        }
+                    }
+                } 
+            },
+            { "$project": {
+                "stations.name": 1, "stations.departureTime": 1, "stations.arrivalTime": 1, '_id': 0
+            }},
         ]
         ))
 
