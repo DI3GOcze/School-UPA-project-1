@@ -1,5 +1,4 @@
 from datetime import timedelta, datetime
-from itertools import count
 from models import *
 from models.link import linkStationStructure, trainActivityStructure
 from parser import Parser
@@ -46,7 +45,7 @@ if __name__ == "__main__":
     database = Database()
 
     parser = Parser(database)
-    parser.download_months()
+    parser.parse_month("2022-01")
     # insertDummyStations(database)
     # insertDummyLinks(database)
 
