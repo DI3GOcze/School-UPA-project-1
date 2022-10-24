@@ -46,7 +46,8 @@ if __name__ == "__main__":
     database = Database()
 
     parser = Parser(database)
-    parser.download_months()
+    # parser.parse()
+    parser.parse_cancelled()
     # insertDummyStations(database)
     # insertDummyLinks(database)
 

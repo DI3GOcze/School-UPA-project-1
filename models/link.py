@@ -79,6 +79,12 @@ class LinkModel:
     def get(self, id):
         return self.linkCollection.find_one({'_id': id})
 
+    def deleteFromCalendar(self, id, dates: list):
+        self.linkCollection.update_one({'_id': id}, {
+            '$pull': { 'plannedCalendar': {'$in': dates} } 
+        })
+
+
     def findLinks(self, fromName: str, toName: str, date: datetime)-> list :
         lowerDateLimit = date.replace(hour=0, minute=0, second=0, microsecond=0)
         upperDateLimit = date.replace(hour=23, minute=59, second=59, microsecond=999)

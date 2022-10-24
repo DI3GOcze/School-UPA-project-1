@@ -157,17 +157,20 @@ class Parser:
             file_path = os.path.join(self.__xml_dir, file)
             tree = ET.parse(file_path)
             root = tree.getroot()
-
-            pa_identifier = root.find("./Identifiers/PlannedTransportIdentifiers/[ObjectType='PA']")
-            tr_identifier = root.find("./Identifiers/PlannedTransportIdentifiers/[ObjectType='TR']")
             
-            calendar = path_info.find("./PlannedCalendar")
+            pa_identifier = root.find("./PlannedTransportIdentifiers/[ObjectType='PA']")
+            tr_identifier = root.find("./PlannedTransportIdentifiers/[ObjectType='TR']")
+            
+            calendar = root.find("./PlannedCalendar")
 
             pa_id = "_".join(element.text for element in pa_identifier)
             tr_id = "_".join(element.text for element in tr_identifier)
             link_id = pa_id + "__" + tr_id
             
             parsed_calendar = self.__parse_calendar(calendar)
+
+            self.db.linkModel.deleteFromCalendar(link_id, parsed_calendar)
+            
 
     def parse(self):
         self.__download()
