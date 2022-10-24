@@ -28,18 +28,34 @@ class StationModel:
         self.linkCollection = self.db['link']
         self.stationCollection = self.db['station']
         
-    def insert(self, name: str, id: str, countryCode: str):
-        # Create array of objects 
-
-        realatedLinks = self.linkCollection.distinct('_id', {
-            'stations': { '$elemMatch': {'_id': id} }
-        })
-
-        realatedLinks = list(realatedLinks)
-        
+    def insert(self, name: str, id: str, countryCode: str, realatedLinks: list = []):
         self.stationCollection.replace_one({'_id': id}, {
             '_id': id,
             'name': name,
             'countryCode' : countryCode,
             'linkIds': realatedLinks
         }, upsert = True)
+
+    def get(self, id):
+        return self.stationCollection.find_one({'_id': id})
+
+    def addRealtionToLink(self, stationId, linkId):
+        return self.stationCollection.update_one({'_id': stationId}, {
+                '$addToSet': { 'linkIds': linkId } 
+            }
+        )
+
+    def removeRealtionToLink(self, stationId, linkId):
+        return self.stationCollection.update_one({'_id': stationId}, {
+                '$pull': { 'linkIds': linkId } 
+            }
+        )
+
+    def autoUpdateStationRelatedLinks(self, id):
+        realatedLinks = self.linkCollection.distinct('_id', {
+            'stations': { '$elemMatch': {'_id': id} }
+        })
+
+        realatedLinks = list(realatedLinks)
+
+        return self.stationCollection.update_one({'_id': id}, {'linkIds': realatedLinks})

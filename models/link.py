@@ -76,6 +76,9 @@ class LinkModel:
             'plannedCalendar': calendar 
         }, upsert=True )
 
+    def get(self, id):
+        return self.linkCollection.find_one({'_id': id})
+
     def findLinks(self, fromName: str, toName: str, date: datetime)-> list :
         lowerDateLimit = date.replace(hour=0, minute=0, second=0, microsecond=0)
         upperDateLimit = date.replace(hour=23, minute=59, second=59, microsecond=999)
@@ -96,60 +99,60 @@ class LinkModel:
             {
                 '$addFields': { 
                     'startingStation': { 
-                        '$first': {
-                            '$filter': {
-                                'input': '$stations',
-                                'as': 'station',
-                                'cond' : {
-                                    '$eq': ['$$station._id', stationFrom['_id'] ]
-                                }
+                        '$arrayElemAt': [
+                            '$stations',
+                            { 
+                                '$indexOfArray': [
+                                    '$stations._id',
+                                    stationFrom['_id']
+                                ] 
                             }
-                        } 
-                    },
+                        ] 
+                    }, 
                     'destinationStation': { 
-                        '$first': {
-                            '$filter': {
-                                'input': '$stations',
-                                'as': 'station',
-                                'cond' : {
-                                    '$eq': ['$$station._id', stationTo['_id'] ]
-                                }
-                            } 
-                        }
+                        '$arrayElemAt': [
+                            '$stations',
+                            { 
+                                '$indexOfArray': [
+                                    '$stations._id',
+                                    stationTo['_id']
+                                ] 
+                            }
+                        ] 
                     } 
                 }
             },
             {
                 '$match': { 
                    '$expr': {
-                        '$lt': ["$startingStation.departureTime", '$destinationStation.arrivalTime']
+                        '$lt': ['$startingStation.departureTime', '$destinationStation.arrivalTime']
                     },
                     'plannedCalendar': { '$elemMatch': {'$lt': upperDateLimit, '$gte': lowerDateLimit} } 
                 }
             },
             {
                 '$lookup': {
-                    'from': "station",
-                    'localField': "stations._id",
-                    'foreignField': "_id",
-                    'as': "stationsInfo"
+                    'from': 'station',
+                    'localField': 'stations._id',
+                    'foreignField': '_id',
+                    'as': 'stationsInfo'
                 }
             },
             { 
-                "$addFields": {
-                    "stations": {
-                        "$map": {
-                            "input": "$stations",
-                            "in": {
-                                "$mergeObjects": [
-                                    "$$this",
+                '$addFields': {
+                    'stations': {
+                        '$map': {
+                            'input': '$stations',
+                            'in': {
+                                '$mergeObjects': [
+                                    '$$this',
                                     { 
-                                        "$arrayElemAt": [
-                                            "$stationsInfo",
+                                        '$arrayElemAt': [
+                                            '$stationsInfo',
                                             { 
-                                                "$indexOfArray": [
-                                                    "$stationsInfo._id",
-                                                    "$$this._id"
+                                                '$indexOfArray': [
+                                                    '$stationsInfo._id',
+                                                    '$$this._id'
                                                 ] 
                                             }
                                         ] 
@@ -160,8 +163,8 @@ class LinkModel:
                     }
                 } 
             },
-            { "$project": {
-                "stations.name": 1, "stations.departureTime": 1, "stations.arrivalTime": 1, '_id': 0
+            { '$project': {
+                'stations.name': 1, 'stations.departureTime': 1, 'stations.arrivalTime': 1, '_id': 0
             }},
         ]
         ))
