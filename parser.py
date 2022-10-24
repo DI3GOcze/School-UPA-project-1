@@ -2,15 +2,14 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 import zipfile
 import os
-from urllib import request
-from models import link as link_models, station as station_models
-from database import Database
-import httplib2
-from bs4 import BeautifulSoup, SoupStrainer
 import re
-from urllib.parse import urlparse
 import gzip
 import shutil
+from urllib import request
+from urllib.parse import urlparse
+from bs4 import BeautifulSoup, SoupStrainer
+from models import link as link_models, station as station_models
+from database import Database
 
 _BASE_URL = 'https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/'
 _SUFFIXES = [
@@ -31,61 +30,66 @@ class Parser:
     station_time_format = '%H:%M:%S.0000000%z'
     calendar_datetime_format = '%Y-%m-%dT%H:%M:%S'
     
-    def __init__(self, db: Database, timetable: str = "PA"):
+    def __init__(self, db: Database, dir="tmp"):
         self.db = db
-        self.timetable = timetable
-        self.__xml_dir = f"temp/{timetable}"
+        self.dir = dir
 
-    def __download(self):
-        if not os.path.isdir('temp/'):
-            os.makedirs('temp/')
+    def __download_base(self, filename):
+        timetable_dir = os.path.join(self.dir, filename)
+        if not os.path.isdir(self.dir):
+            os.makedirs(self.dir)
 
-        if not os.path.isdir(self.__xml_dir):
-            url = f"https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/{self.timetable}.zip"
-            request.urlretrieve(url, f"{self.__xml_dir}.zip")
+        if not os.path.isdir(timetable_dir):
+            url = f"https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/{filename}.zip"
+            request.urlretrieve(url, f"{timetable_dir}.zip")
 
-            with zipfile.ZipFile(f"{self.__xml_dir}.zip","r") as zip_ref:
-                zip_ref.extractall(self.__xml_dir)
+            with zipfile.ZipFile(f"{timetable_dir}.zip","r") as zip_ref:
+                zip_ref.extractall(timetable_dir)
 
-    def __ensuerFoldersCreated(self):
-        if not os.path.isdir('temp/'):
-            os.makedirs('temp/')
+    def __ensure_folders_created(self, folder_path):
+        if not os.path.isdir(self.dir):
+            os.makedirs(self.dir)
+        
+        if not os.path.isdir(folder_path):
+            os.path.join(folder_path)
 
-        if not os.path.isdir('temp/downloaded'):
-            os.makedirs('temp/downloaded')
+        if not os.path.isdir(f'{folder_path}/downloaded'):
+            os.makedirs(f'{folder_path}/downloaded')
 
-        if not os.path.isdir('temp/downloaded'):
-            os.makedirs('temp/downloaded')
+        if not os.path.isdir(f'{folder_path}/downloaded'):
+            os.makedirs(f'{folder_path}/downloaded')
 
-        if not os.path.isdir('temp/PA'):
-            os.makedirs('temp/PA')
+        if not os.path.isdir(f'{folder_path}/new'):
+            os.makedirs(f'{folder_path}/new')
 
-        if not os.path.isdir('temp/CANCELED'):
-            os.makedirs('temp/CANCELED')
+        if not os.path.isdir(f'{folder_path}/cancelled'):
+            os.makedirs(f'{folder_path}/cancelled')
 
-        if not os.path.isdir('temp/downloaded/PA'):
-            os.makedirs('temp/downloaded/PA')
+        if not os.path.isdir(f'{folder_path}/downloaded/new'):
+            os.makedirs(f'{folder_path}/downloaded/new')
 
-        if not os.path.isdir('temp/downloaded/CANCELED'):
-            os.makedirs('temp/downloaded/CANCELED')
+        if not os.path.isdir(f'{folder_path}/downloaded/cancelled'):
+            os.makedirs(f'{folder_path}/downloaded/cancelled')
 
-    def download_months(self):
-        self.__ensuerFoldersCreated()        
+    def __download_month(self, folder_name):
+        folder_path = os.path.join(self.dir, folder_name)
+        self.__ensure_folders_created(folder_path)
 
+        response = request.urlopen(_BASE_URL+folder_name).read().decode('utf-8')
+
+        for link in BeautifulSoup(response, parse_only=SoupStrainer('a', href = re.compile('.*xml|.*xml.zip')), features="html.parser"):
+            fileName = os.path.basename(urlparse(link['href']).path).replace('.xml.zip', '')
+            folderName = 'cancelled' if re.search("cancel.*", fileName) else 'new'
+
+            request.urlretrieve(f"https://portal.cisjr.cz/{link['href']}", os.path.join(folder_path, "downloaded", folderName, fileName+".zip"))
+
+            with gzip.open(os.path.join(folder_path, "downloaded", folderName, fileName+".zip"), 'rb') as f_in:
+                with open(os.path.join(folder_path, folderName, fileName+".xml"), 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+
+    def __download_months(self):
         for suffix in _SUFFIXES:
-            http = httplib2.Http()
-            status, response = http.request(_BASE_URL + suffix)
-
-            for link in BeautifulSoup(response, parse_only=SoupStrainer('a', href = re.compile('.*xml|.*xml.zip'))):
-                fileName = os.path.basename(urlparse(link['href']).path)
-                fileXmlName = fileName.replace('.zip', '')
-                folderName = 'CANCELED/' if re.search("cancel.*", fileName) else 'PA/'
-
-                request.urlretrieve(f"https://portal.cisjr.cz/{link['href']}", f"temp/downloaded/{folderName}{fileName}")
-
-                with gzip.open(f"temp/downloaded/{folderName}{fileName}", 'rb') as f_in:
-                    with open(f"temp/{folderName}{fileXmlName}", 'wb') as f_out:
-                        shutil.copyfileobj(f_in, f_out)
+            self.__download_month(folder_name=suffix)
 
     def __parse_stations(self, stations: list[ET.Element]) -> list[station_models.StationStructure]:
         parsed_stations = []
@@ -149,12 +153,10 @@ class Parser:
             else:
                 self.db.stationModel.insert(name=station.name, id=station.id, countryCode=station.countryCode, realatedLinks = [link_id])
 
-    def parse_cancelled(self):
-        self.__download()
-        
-        for file in os.listdir(self.__xml_dir):
+    def __parse_cancelled(self, path):        
+        for file in os.listdir(path):
             print(file)
-            file_path = os.path.join(self.__xml_dir, file)
+            file_path = os.path.join(path, file)
             tree = ET.parse(file_path)
             root = tree.getroot()
 
@@ -170,14 +172,11 @@ class Parser:
             parsed_calendar = self.__parse_calendar(calendar)
 
             self.db.linkModel.deleteFromCalendar(link_id, parsed_calendar)
-            
 
-    def parse(self):
-        self.__download()
-        
-        for file in os.listdir(self.__xml_dir):
+    def __parse(self, path):        
+        for file in os.listdir(path):
             print(file)
-            file_path = os.path.join(self.__xml_dir, file)
+            file_path = os.path.join(path, file)
             tree = ET.parse(file_path)
             root = tree.getroot()
 
@@ -198,3 +197,15 @@ class Parser:
             self.__insert_stations(parsed_stations, link_id)
 
             self.db.linkModel.insert(id=link_id, stations=parsed_stations, calendar=parsed_calendar)
+
+    def parse_month(self, folder_name):
+        self.__download_month(folder_name)
+        path_to_cancelled = os.path.join(self.dir, folder_name, "cancelled")
+        path_to_new = os.path.join(self.dir, folder_name, "new")
+        self.__parse_cancelled(path_to_cancelled)
+        self.__parse(path_to_new)
+
+    def parse_base(self, filename):
+        self.__download_base(filename)
+        path_to_base = os.path.join(self.dir, filename)
+        self.__parse(path_to_base)
