@@ -27,14 +27,14 @@ class Parser:
             with zipfile.ZipFile(f"{self.__xml_dir}.zip","r") as zip_ref:
                 zip_ref.extractall(self.__xml_dir)
 
-    def __parse_stations(self, stations: list[ET.Element]) -> list[link_models.linkStationStructure]:
+    def __parse_stations(self, stations: list[ET.Element]) -> list[station_models.StationStructure]:
         parsed_stations = []
         for station in stations:
             train_activities = [link_models.trainActivityStructure(
                 type=activity.find("./TrainActivityType").text,
                 asocTrainID=(
                     ET.tostring(activity.find("./AssociatedAttachedTrainID"), encoding='utf-8') 
-                    if activity.find("./AssociatedAttachedTrainID") 
+                    if activity.find("./AssociatedAttachedTrainID")
                     else None
                 ),
                 asocOTN=(
@@ -44,17 +44,28 @@ class Parser:
                 )
             ) for activity in station.findall("./TrainActivity")]
 
-            location_id = station.find("./Location/LocationPrimaryCode")
-            location_id = location_id.text if location_id != None else None
+            
+            id = station.find("./Location/LocationPrimaryCode").text
+            name = station.find("./Location/PrimaryLocationName").text
+            country_code = station.find("./Location/CountryCodeISO").text
 
             arrival_time = station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALA']/Time")
-            arrival_time = datetime.strptime(arrival_time.text, self.station_time_format) if arrival_time != None and arrival_time.text != None else None
+            arrival_time = (
+                datetime.strptime(arrival_time.text, self.station_time_format) 
+                if arrival_time != None and arrival_time.text != None 
+                else None
+            )
             
             departure_time = station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALD']/Time")
-            departure_time = datetime.strptime(departure_time.text, self.station_time_format) if departure_time != None and departure_time.text != None else None
+            departure_time = (
+                datetime.strptime(departure_time.text, self.station_time_format) 
+                if departure_time != None and departure_time.text != None 
+                else None
+            )
 
-            parsed_stations.append(link_models.linkStationStructure(location_id, arrival_time, departure_time, train_activities))
-            
+            parsed_stations.append(station_models.StationStructure(
+                id=id, arrivalTime=arrival_time, departureTime=departure_time, trainActivities=train_activities, name=name, countryCode=country_code)
+            )
         return parsed_stations
 
     def __parse_calendar(self, calendar: ET.Element) -> list[datetime]:
@@ -69,6 +80,10 @@ class Parser:
                 parsed_calendar.append(start_date+timedelta(days=day_offset))
             day_offset+=1
         return parsed_calendar
+
+    def __insert_stations(self, stations: list[station_models.StationStructure]):
+        for station in stations:
+            self.db.stationModel.insert(name=station.name, id=station.id, countryCode=station.countryCode)
 
     def parse(self):
         self.__download()
@@ -91,5 +106,7 @@ class Parser:
             
             parsed_stations = self.__parse_stations(stations)
             parsed_calendar = self.__parse_calendar(calendar)
+
+            self.__insert_stations(parsed_stations)
 
             self.db.linkModel.insert(id=link_id, stations=parsed_stations, calendar=parsed_calendar)

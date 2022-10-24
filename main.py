@@ -44,10 +44,10 @@ if __name__ == "__main__":
 
     database = Database()
 
-    # parser = Parser(database)
-    # parser.parse()
+    parser = Parser(database)
+    parser.parse()
     # insertDummyStations(database)
     # insertDummyLinks(database)
 
-    result = database.linkModel.findLinks('Krhanice', 'Prosečnice', datetime.now())
-    print(result)
+    # result = database.linkModel.findLinks('Krhanice', 'Prosečnice', datetime.now())
+    # print(result)
