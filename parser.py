@@ -5,7 +5,27 @@ import os
 from urllib import request
 from models import link as link_models, station as station_models
 from database import Database
+import httplib2
+from bs4 import BeautifulSoup, SoupStrainer
+import re
+from urllib.parse import urlparse
+import gzip
+import shutil
 
+_BASE_URL = 'https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/'
+_SUFFIXES = [
+    '2021-12/',
+    '2022-01/',
+    '2022-02/',
+    '2022-03/',
+    '2022-04/',
+    '2022-05/',
+    '2022-06/',
+    '2022-07/',
+    '2022-08/',
+    '2022-09/',
+    '2022-10/',
+]
 
 class Parser:
     station_time_format = '%H:%M:%S.0000000%z'
@@ -26,6 +46,46 @@ class Parser:
 
             with zipfile.ZipFile(f"{self.__xml_dir}.zip","r") as zip_ref:
                 zip_ref.extractall(self.__xml_dir)
+
+    def __ensuerFoldersCreated(self):
+        if not os.path.isdir('temp/'):
+            os.makedirs('temp/')
+
+        if not os.path.isdir('temp/downloaded'):
+            os.makedirs('temp/downloaded')
+
+        if not os.path.isdir('temp/downloaded'):
+            os.makedirs('temp/downloaded')
+
+        if not os.path.isdir('temp/PA'):
+            os.makedirs('temp/PA')
+
+        if not os.path.isdir('temp/CANCELED'):
+            os.makedirs('temp/CANCELED')
+
+        if not os.path.isdir('temp/downloaded/PA'):
+            os.makedirs('temp/downloaded/PA')
+
+        if not os.path.isdir('temp/downloaded/CANCELED'):
+            os.makedirs('temp/downloaded/CANCELED')
+
+    def download_months(self):
+        self.__ensuerFoldersCreated()        
+
+        for suffix in _SUFFIXES:
+            http = httplib2.Http()
+            status, response = http.request(_BASE_URL + suffix)
+
+            for link in BeautifulSoup(response, parse_only=SoupStrainer('a', href = re.compile('.*xml|.*xml.zip'))):
+                fileName = os.path.basename(urlparse(link['href']).path)
+                fileXmlName = fileName.replace('.zip', '')
+                folderName = 'CANCELED/' if re.search("cancel.*", fileName) else 'PA/'
+
+                request.urlretrieve(f"https://portal.cisjr.cz/{link['href']}", f"temp/downloaded/{folderName}{fileName}")
+
+                with gzip.open(f"temp/downloaded/{folderName}{fileName}", 'rb') as f_in:
+                    with open(f"temp/{folderName}{fileXmlName}", 'wb') as f_out:
+                        shutil.copyfileobj(f_in, f_out)
 
     def __parse_stations(self, stations: list[ET.Element]) -> list[station_models.StationStructure]:
         parsed_stations = []
