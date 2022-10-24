@@ -25,15 +25,15 @@ if __name__ == "__main__":
 
     # Parse base import 
     if argv[0] == '--parse-base' and len(argv) == 1:
-        parser.parse()
+        parser.parse_base('GVD2022')
     
     # Parse base import and than all months
     elif argv[0] == '--parse-all' and len(argv) == 1:
-        print('all')
+        parser.parse_all()
     
     # Parse concrete month
     elif argv[0] == '--parse-month' and len(argv) == 2:
-        print('month', argv[1])
+        parser.parse_month(argv[1])
 
     # Search for link
     elif argv[0] == '--search' and len(argv) == 4:

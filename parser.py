@@ -12,18 +12,18 @@ from models import link as link_models, station as station_models
 from database import Database
 
 _BASE_URL = 'https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/'
-_SUFFIXES = [
-    '2021-12/',
-    '2022-01/',
-    '2022-02/',
-    '2022-03/',
-    '2022-04/',
-    '2022-05/',
-    '2022-06/',
-    '2022-07/',
-    '2022-08/',
-    '2022-09/',
-    '2022-10/',
+_MONTHS = [
+    '2021-12',
+    '2022-01',
+    '2022-02',
+    '2022-03',
+    '2022-04',
+    '2022-05',
+    '2022-06',
+    '2022-07',
+    '2022-08',
+    '2022-09',
+    '2022-10',
 ]
 
 class Parser:
@@ -86,10 +86,6 @@ class Parser:
             with gzip.open(os.path.join(folder_path, "downloaded", folderName, fileName+".zip"), 'rb') as f_in:
                 with open(os.path.join(folder_path, folderName, fileName+".xml"), 'wb') as f_out:
                     shutil.copyfileobj(f_in, f_out)
-
-    def __download_months(self):
-        for suffix in _SUFFIXES:
-            self.__download_month(folder_name=suffix)
 
     def __parse_stations(self, stations: list[ET.Element]) -> list[station_models.StationStructure]:
         parsed_stations = []
@@ -209,3 +205,9 @@ class Parser:
         self.__download_base(filename)
         path_to_base = os.path.join(self.dir, filename)
         self.__parse(path_to_base)
+
+    def parse_all(self):
+        self.parse_base('GVD2022')
+        for month in _MONTHS:
+            self.parse_month(month)
+
