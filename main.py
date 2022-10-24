@@ -32,11 +32,11 @@ def insertDummyLinks(database: Database):
  
 # Temp function for dummy data
 def insertDummyStations(database: Database):
-    database.stationModel.insert('Siroky Dul', 1 , 'CZ', [1])
-    database.stationModel.insert('Policka', 2 , 'CZ', [1])
-    database.stationModel.insert('Bystre', 3 , 'CZ', [1])
-    database.stationModel.insert('Brno', 4 , 'CZ', [1])
-    database.stationModel.insert('Praha', 5 , 'CZ', [1])
+    database.stationModel.insert('Krhanice', '55766' , 'CZ')
+    database.stationModel.insert('vl. v km 14,422', '55767' , 'CZ')
+    database.stationModel.insert('Prosečnice', '55776' , 'CZ')
+    database.stationModel.insert('Kamenný Přívoz', '55756' , 'CZ')
+    database.stationModel.insert('Jílové u Prahy', '55736' , 'CZ')
 
 
 # This is added so that many files can reuse the function get_database()
@@ -44,9 +44,10 @@ if __name__ == "__main__":
 
     database = Database()
 
-    parser = Parser(database)
-    parser.parse()
+    # parser = Parser(database)
+    # parser.parse()
     # insertDummyStations(database)
     # insertDummyLinks(database)
 
-    # database.linkModel.findLinks('Siroky Dul', 'Policka', datetime.now())
+    result = database.linkModel.findLinks('Krhanice', 'Prosečnice', datetime.now())
+    print(result)

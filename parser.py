@@ -8,6 +8,8 @@ from database import Database
 
 
 class Parser:
+    timeFormat = '%H:%M:%S.0000000%z'
+    
     def __init__(self, db: Database, timetable: str = "GVD2022"):
         self.db = db
         self.timetable = timetable
@@ -24,7 +26,7 @@ class Parser:
             with zipfile.ZipFile(f"{self.__xmlDIR}.zip","r") as zip_ref:
                 zip_ref.extractall(self.__xmlDIR)
 
-    def __parse_stations(self, stations):
+    def __parse_stations(self, stations: list[ET.Element]):
         parsed_stations = []
         for station in stations:
             train_activities = [link_models.trainActivityStructure(
@@ -40,21 +42,18 @@ class Parser:
                     else None
                 )
             ) for activity in station.findall("./TrainActivity")]
-            parsed_stations.append(link_models.linkStationStructure(
-                id=station.find("./Location/LocationPrimaryCode").text,
-                arrivalTime=(
-                    station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALA']/Time").text 
-                    if station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALA']/Time")
-                    else None
-                ),
-                departureTime=(
-                    station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALD']/Time").text
-                    if station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALA']/Time")
-                    else None
-                ),
-                trainActivities=train_activities
-                ) 
-            )
+
+            locationId = station.find("./Location/LocationPrimaryCode")
+            locationId = locationId.text if locationId != None else None
+
+            arrivalTime = station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALA']/Time")
+            arrivalTime = datetime.strptime(arrivalTime.text, self.timeFormat) if arrivalTime != None and arrivalTime.text != None else None
+            
+            departureTime = station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALD']/Time")
+            departureTime = datetime.strptime(departureTime.text, self.timeFormat) if departureTime != None and departureTime.text != None else None
+
+            parsed_stations.append(link_models.linkStationStructure(locationId, arrivalTime, departureTime, train_activities))
+            
         return parsed_stations
 
     def parse(self):
@@ -78,4 +77,4 @@ class Parser:
             
             parsed_stations = self.__parse_stations(stations)
 
-            self.db.linkModel.insert(id=link_id, stations=parsed_stations, calendar=[datetime.now()])
+            self.db.linkModel.insert(id=link_id, stations = parsed_stations, calendar=[datetime.now()])
