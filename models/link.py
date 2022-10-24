@@ -57,6 +57,9 @@ class LinkModel:
         self.stationCollection = self.db['station']
         
     def insert(self, id, stations: list[linkStationStructure], calendar: list[datetime]):
+        """
+        Insert new link entry or update current one
+        """
         # Create array from linkStationStructure objects
         stationArray = [{
             '_id': x.id,
@@ -77,15 +80,24 @@ class LinkModel:
         }, upsert=True )
 
     def get(self, id):
+        """
+        Returns link with given ID
+        """
         return self.linkCollection.find_one({'_id': id})
 
     def deleteFromCalendar(self, id, dates: list):
+        """
+        Deletes all dates from link kalendark, that were passed in argument
+        """
         self.linkCollection.update_one({'_id': id}, {
             '$pull': { 'plannedCalendar': {'$in': dates} } 
         })
 
 
     def findLinks(self, fromName: str, toName: str, date: datetime)-> list :
+        """
+        Finds and returns all links, that correspod with passed arguments
+        """
         lowerDateLimit = date.replace(hour=0, minute=0, second=0, microsecond=0)
         upperDateLimit = date.replace(hour=23, minute=59, second=59, microsecond=999)
 
@@ -95,13 +107,16 @@ class LinkModel:
         if stationFrom == None or stationTo == None or not 'linkIds' in stationFrom or not 'linkIds' in stationTo:
             return []
 
+        # Possible links are intersection between starting and destination station link lists
         possibleLinkIds = list(set(stationFrom['linkIds']) & set(stationTo['linkIds']))     
         
         links = list(self.linkCollection.aggregate( [
-            # Decrese number of possible links
+            # Filter by links, that are related to both stations
             {
                 '$match': { '_id': { '$in' : possibleLinkIds } }
             },
+
+            # Specify starting station and destination station
             {
                 '$addFields': { 
                     'startingStation': { 
@@ -130,12 +145,16 @@ class LinkModel:
             },
             {
                 '$match': { 
+                   # Filter links that have correct order of starting and destination sations
                    '$expr': {
                         '$lt': ['$startingStation.departureTime', '$destinationStation.arrivalTime']
                     },
+                    # Filter stations by date
                     'plannedCalendar': { '$elemMatch': {'$lt': upperDateLimit, '$gte': lowerDateLimit} } 
                 }
             },
+
+            # Add station detais (name,...)
             {
                 '$lookup': {
                     'from': 'station',
@@ -170,13 +189,9 @@ class LinkModel:
                 } 
             },
             { '$project': {
-                'stations.name': 1, 'stations.departureTime': 1, 'stations.arrivalTime': 1, '_id': 0
+                'stations.name': 1, 'stations.departureTime': 1, 'stations.arrivalTime': 1, '_id': 1
             }},
         ]
         ))
 
         return links
-
-
-
-

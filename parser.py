@@ -31,7 +31,7 @@ class Parser:
     station_time_format = '%H:%M:%S.0000000%z'
     calendar_datetime_format = '%Y-%m-%dT%H:%M:%S'
     
-    def __init__(self, db: Database, timetable: str = "GVD2022"):
+    def __init__(self, db: Database, timetable: str = "PA"):
         self.db = db
         self.timetable = timetable
         self.__xml_dir = f"temp/{timetable}"
@@ -157,7 +157,7 @@ class Parser:
             file_path = os.path.join(self.__xml_dir, file)
             tree = ET.parse(file_path)
             root = tree.getroot()
-            
+
             pa_identifier = root.find("./PlannedTransportIdentifiers/[ObjectType='PA']")
             tr_identifier = root.find("./PlannedTransportIdentifiers/[ObjectType='TR']")
             
