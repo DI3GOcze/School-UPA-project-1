@@ -45,10 +45,10 @@ if __name__ == "__main__":
 
     database = Database()
 
-    # parser = Parser(database)
-    # parser.parse()
+    parser = Parser(database)
+    parser.download_months()
     # insertDummyStations(database)
     # insertDummyLinks(database)
 
-    result = database.linkModel.findLinks('Praha-Zbraslav', 'Praha-Komořany', datetime.now() + + timedelta(days=3))
-    print(len(result))
+    # result = database.linkModel.findLinks('Praha-Zbraslav', 'Praha-Komořany', datetime.now() + + timedelta(days=3))
+    # print(len(result))
