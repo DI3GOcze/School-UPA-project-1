@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from itertools import count
 from models import *
 from models.link import linkStationStructure, trainActivityStructure
 from parser import Parser
@@ -44,10 +45,10 @@ if __name__ == "__main__":
 
     database = Database()
 
-    parser = Parser(database)
-    parser.parse()
+    # parser = Parser(database)
+    # parser.parse()
     # insertDummyStations(database)
     # insertDummyLinks(database)
 
-    # result = database.linkModel.findLinks('Krhanice', 'Prosečnice', datetime.now())
-    # print(result)
+    result = database.linkModel.findLinks('Praha-Zbraslav', 'Praha-Komořany', datetime.now() + + timedelta(days=3))
+    print(len(result))

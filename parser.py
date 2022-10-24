@@ -81,9 +81,13 @@ class Parser:
             day_offset+=1
         return parsed_calendar
 
-    def __insert_stations(self, stations: list[station_models.StationStructure]):
+    def __insert_stations(self, stations: list[station_models.StationStructure], link_id):
         for station in stations:
-            self.db.stationModel.insert(name=station.name, id=station.id, countryCode=station.countryCode)
+            currentStation = self.db.stationModel.get(station.id)
+            if currentStation != None:
+                self.db.stationModel.addRealtionToLink(station.id, link_id)
+            else:
+                self.db.stationModel.insert(name=station.name, id=station.id, countryCode=station.countryCode, realatedLinks = [link_id])
 
     def parse(self):
         self.__download()
@@ -107,6 +111,6 @@ class Parser:
             parsed_stations = self.__parse_stations(stations)
             parsed_calendar = self.__parse_calendar(calendar)
 
-            self.__insert_stations(parsed_stations)
+            self.__insert_stations(parsed_stations, link_id)
 
             self.db.linkModel.insert(id=link_id, stations=parsed_stations, calendar=parsed_calendar)
