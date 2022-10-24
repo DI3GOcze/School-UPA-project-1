@@ -11,14 +11,18 @@ class Parser:
     def __init__(self, db: Database, timetable: str = "GVD2022"):
         self.db = db
         self.timetable = timetable
+        self.__xmlDIR = f"temp/{timetable}"
 
     def __download(self):
-        if not os.path.isdir(self.timetable):
-            url = f"https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/{self.timetable}.zip"
-            request.urlretrieve(url, f"{self.timetable}.zip")
+        if not os.path.isdir('temp/'):
+            os.makedirs('temp/')
 
-            with zipfile.ZipFile(f"{self.timetable}.zip","r") as zip_ref:
-                zip_ref.extractall(self.timetable)
+        if not os.path.isdir(self.__xmlDIR):
+            url = f"https://portal.cisjr.cz/pub/draha/celostatni/szdc/2022/{self.timetable}.zip"
+            request.urlretrieve(url, f"{self.__xmlDIR}.zip")
+
+            with zipfile.ZipFile(f"{self.__xmlDIR}.zip","r") as zip_ref:
+                zip_ref.extractall(self.__xmlDIR)
 
     def __parse_stations(self, stations):
         parsed_stations = []
@@ -56,9 +60,9 @@ class Parser:
     def parse(self):
         self.__download()
         
-        for file in os.listdir(self.timetable):
+        for file in os.listdir(self.__xmlDIR):
             print(file)
-            file_path = os.path.join(self.timetable, file)
+            file_path = os.path.join(self.__xmlDIR, file)
             tree = ET.parse(file_path)
             root = tree.getroot()
 
