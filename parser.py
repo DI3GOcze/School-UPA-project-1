@@ -89,6 +89,26 @@ class Parser:
             else:
                 self.db.stationModel.insert(name=station.name, id=station.id, countryCode=station.countryCode, realatedLinks = [link_id])
 
+    def parse_cancelled(self):
+        self.__download()
+        
+        for file in os.listdir(self.__xml_dir):
+            print(file)
+            file_path = os.path.join(self.__xml_dir, file)
+            tree = ET.parse(file_path)
+            root = tree.getroot()
+
+            pa_identifier = root.find("./Identifiers/PlannedTransportIdentifiers/[ObjectType='PA']")
+            tr_identifier = root.find("./Identifiers/PlannedTransportIdentifiers/[ObjectType='TR']")
+            
+            calendar = path_info.find("./PlannedCalendar")
+
+            pa_id = "_".join(element.text for element in pa_identifier)
+            tr_id = "_".join(element.text for element in tr_identifier)
+            link_id = pa_id + "__" + tr_id
+            
+            parsed_calendar = self.__parse_calendar(calendar)
+
     def parse(self):
         self.__download()
         
@@ -100,6 +120,7 @@ class Parser:
 
             pa_identifier = root.find("./Identifiers/PlannedTransportIdentifiers/[ObjectType='PA']")
             tr_identifier = root.find("./Identifiers/PlannedTransportIdentifiers/[ObjectType='TR']")
+                  
             path_info = root.find("./CZPTTInformation")
             stations = path_info.findall("./CZPTTLocation")
             calendar = path_info.find("./PlannedCalendar")
