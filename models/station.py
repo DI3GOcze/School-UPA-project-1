@@ -1,4 +1,7 @@
+from dataclasses import dataclass
 from pymongo import database
+
+from models.link import linkStationStructure
 
 # Structure :
 
@@ -12,6 +15,11 @@ from pymongo import database
 #           linkID: ID
 #       ]
 #   }
+
+@dataclass
+class StationStructure(linkStationStructure):
+    name: str
+    countryCode: str
 
 class StationModel:
     
