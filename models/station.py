@@ -28,7 +28,7 @@ class StationModel:
         self.linkCollection = self.db['link']
         self.stationCollection = self.db['station']
         
-    def insert(self, name: str, id: str, countryCode: str, realatedLinks: list):
+    def insert(self, name: str, id: str, countryCode: str, realatedLinks: list = []):
         self.stationCollection.replace_one({'_id': id}, {
             '_id': id,
             'name': name,

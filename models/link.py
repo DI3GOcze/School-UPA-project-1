@@ -76,6 +76,9 @@ class LinkModel:
             'plannedCalendar': calendar 
         }, upsert=True )
 
+    def get(self, id):
+        return self.linkCollection.find_one({'_id': id})
+
     def findLinks(self, fromName: str, toName: str, date: datetime)-> list :
         lowerDateLimit = date.replace(hour=0, minute=0, second=0, microsecond=0)
         upperDateLimit = date.replace(hour=23, minute=59, second=59, microsecond=999)
@@ -96,26 +99,26 @@ class LinkModel:
             {
                 '$addFields': { 
                     'startingStation': { 
-                        '$first': {
-                            '$filter': {
-                                'input': '$stations',
-                                'as': 'station',
-                                'cond' : {
-                                    '$eq': ['$$station._id', stationFrom['_id'] ]
-                                }
+                        '$arrayElemAt': [
+                            '$stations',
+                            { 
+                                '$indexOfArray': [
+                                    '$stations._id',
+                                    stationFrom['_id']
+                                ] 
                             }
-                        } 
-                    },
+                        ] 
+                    }, 
                     'destinationStation': { 
-                        '$first': {
-                            '$filter': {
-                                'input': '$stations',
-                                'as': 'station',
-                                'cond' : {
-                                    '$eq': ['$$station._id', stationTo['_id'] ]
-                                }
-                            } 
-                        }
+                        '$arrayElemAt': [
+                            '$stations',
+                            { 
+                                '$indexOfArray': [
+                                    '$stations._id',
+                                    stationTo['_id']
+                                ] 
+                            }
+                        ] 
                     } 
                 }
             },
