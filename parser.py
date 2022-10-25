@@ -29,7 +29,7 @@ _MONTHS = [
 ]
 
 class Parser:
-    station_time_format = '%H:%M:%S.0000000%z'
+    station_time_format = '%Y-%m-%d %H:%M:%S.0000000%z'
     calendar_datetime_format = '%Y-%m-%dT%H:%M:%S'
     
     def __init__(self, db: Database, dir="tmp"):
@@ -131,14 +131,14 @@ class Parser:
 
             arrival_time = station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALA']/Time")
             arrival_time = (
-                datetime.strptime(arrival_time.text, self.station_time_format) 
+                datetime.strptime('2000-01-01 ' + arrival_time.text, self.station_time_format) 
                 if arrival_time != None and arrival_time.text != None 
                 else None
             )
             
             departure_time = station.find("./TimingAtLocation/Timing[@TimingQualifierCode='ALD']/Time")
             departure_time = (
-                datetime.strptime(departure_time.text, self.station_time_format) 
+                datetime.strptime('2000-01-01 ' + departure_time.text, self.station_time_format) 
                 if departure_time != None and departure_time.text != None 
                 else None
             )
