@@ -17,21 +17,21 @@ Následně je možné program spustit ve 4 módech:
 
 1. Stažení a nahrání nejnovější verze dat:
 ```
-python main.py --parse_all
+python main.py --parse-all
 ```
 
 <br/>
 
 1. Stažení a nahrání základních dat 
 ```
-python main.py --parse_base
+python main.py --parse-base
 ```
 
 <br/>
 
 1. Stažení a nahrání dat z konkrétního měsíce
 ```
-python main.py --parse_month <month>
+python main.py --parse-month <month>
 ```
 - &lt;month&gt; ve formátu YYYY-mm určuje který měsíc se vybere
 
