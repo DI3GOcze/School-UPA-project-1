@@ -11,7 +11,11 @@ def printLinks(links: list):
     for link in links:
             print(link['_id'])
             for station in link['stations']:
-                print(f"\t{station['name']}: {station['arrivalTime'].time() if station['arrivalTime'] else 'start'} - {station['departureTime'].time() if station['departureTime'] else 'end'}")
+                for activity in station['trainActivites']:
+                    if activity['type'] == '0001':
+                        print(f"\t{station['name']}: {station['arrivalTime'].time() if station['arrivalTime'] else 'start'} - {station['departureTime'].time() if station['departureTime'] else 'end'}")
+                        break
+                
             
             print()
 

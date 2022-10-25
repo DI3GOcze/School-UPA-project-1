@@ -146,7 +146,9 @@ class LinkModel:
             {
                 '$match': { 
                    # Filter links that have correct order of starting and destination sations
-                   '$expr': {
+                    'startingStation.departureTime': {'$ne' : None},
+                    'destinationStation.arrivalTime': {'$ne' : None},
+                    '$expr': {
                         '$lt': ['$startingStation.departureTime', '$destinationStation.arrivalTime']
                     },
                     # Filter stations by date
@@ -188,8 +190,11 @@ class LinkModel:
                     }
                 } 
             },
+            {
+                '$sort': {'startingStation.departureTime': 1}
+            },
             { '$project': {
-                'stations.name': 1, 'stations.departureTime': 1, 'stations.arrivalTime': 1, '_id': 1
+                'stations': 1, '_id': 1
             }},
         ]
         ))
