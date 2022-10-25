@@ -5,7 +5,9 @@ import os
 import re
 import gzip
 import shutil
-from urllib import request
+import zipfile
+from retry import retry
+from urllib import request, error
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup, SoupStrainer
 from models import link as link_models, station as station_models
@@ -71,6 +73,11 @@ class Parser:
         if not os.path.isdir(f'{folder_path}/downloaded/cancelled'):
             os.makedirs(f'{folder_path}/downloaded/cancelled')
 
+    @retry(error.URLError, tries=4, delay=3, backoff=2)
+    def __download_file(self, link, folder_path, folderName, fileName):
+        print(f'Downloading {fileName}')
+        request.urlretrieve(f"https://portal.cisjr.cz/{link['href']}", os.path.join(folder_path, "downloaded", folderName, fileName+".zip"))
+
     def __download_month(self, folder_name):
         folder_path = os.path.join(self.dir, folder_name)
         self.__ensure_folders_created(folder_path)
@@ -84,12 +91,22 @@ class Parser:
             if os.path.isfile(os.path.join(folder_path, folderName, fileName+".xml")):
                 continue
 
-            request.urlretrieve(f"https://portal.cisjr.cz/{link['href']}", os.path.join(folder_path, "downloaded", folderName, fileName+".zip"))
+            try:
+                self.__download_file(link, folder_path, folderName, fileName)
+            except:
+                continue
+            
+            is_zip = zipfile.is_zipfile(os.path.join(folder_path, "downloaded", folderName, fileName+".zip"))
 
-            with gzip.open(os.path.join(folder_path, "downloaded", folderName, fileName+".zip"), 'rb') as f_in:
-                with open(os.path.join(folder_path, folderName, fileName+".xml"), 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-
+            if is_zip:
+                with zipfile.ZipFile(os.path.join(folder_path, "downloaded", folderName, fileName+".zip"),"r") as zip_ref:
+                    zip_ref.extractall(os.path.join(folder_path, folderName))
+    
+            else:
+                with gzip.open(os.path.join(folder_path, "downloaded", folderName, fileName+".zip"), 'rb') as f_in:
+                    with open(os.path.join(folder_path, folderName, fileName+".xml"), 'wb') as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+               
     def __parse_stations(self, stations: list[ET.Element]) -> list[station_models.StationStructure]:
         parsed_stations = []
         for station in stations:
