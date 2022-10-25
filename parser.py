@@ -81,6 +81,9 @@ class Parser:
             fileName = os.path.basename(urlparse(link['href']).path).replace('.xml.zip', '')
             folderName = 'cancelled' if re.search("cancel.*", fileName) else 'new'
 
+            if os.path.isfile(os.path.join(folder_path, folderName, fileName+".xml")):
+                continue
+
             request.urlretrieve(f"https://portal.cisjr.cz/{link['href']}", os.path.join(folder_path, "downloaded", folderName, fileName+".zip"))
 
             with gzip.open(os.path.join(folder_path, "downloaded", folderName, fileName+".zip"), 'rb') as f_in:
@@ -143,6 +146,15 @@ class Parser:
 
     def __insert_stations(self, stations: list[station_models.StationStructure], link_id):
         for station in stations:
+            isStopping = False
+            for activity in station.trainActivities:
+                if activity.type == '0001':
+                    isStopping = True
+                    break
+            
+            if not isStopping:
+                continue
+
             currentStation = self.db.stationModel.get(station.id)
             if currentStation != None:
                 self.db.stationModel.addRealtionToLink(station.id, link_id)
